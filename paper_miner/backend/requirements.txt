@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-dotenv
+email-validator
+pypdf
+google-generativeai
+tinydb
+python-multipart

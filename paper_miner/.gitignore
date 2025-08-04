@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+.env
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node.js
+node_modules/
+build/
+.parcel-cache/
+*.log
+
+# Project-specific files
+db.json
+backend.log
+papers/
+
+# OS generated files
+.DS_Store
+Thumbs.db
