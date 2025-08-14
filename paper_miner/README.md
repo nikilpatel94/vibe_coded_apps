@@ -125,4 +125,5 @@ Developed by Gemini CLI with `gemini-2.5-flash`
 Powered by `gemini-2.5-flash`
 
 ## License
-This project is open-source. (Consider adding a LICENSE file, e.g., MIT License)
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
