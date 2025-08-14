@@ -21,6 +21,7 @@ build/
 db.json
 backend.log
 papers/
+start_app.bat
 
 # OS generated files
 .DS_Store
