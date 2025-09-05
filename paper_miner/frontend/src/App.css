@@ -234,3 +234,30 @@ footer p {
   margin-right: 8px;
   /* Style for custom radio button if needed */
 }
+
+.text-input-container {
+  width: 95%;
+  max-width: 800px;
+  margin: 20px 0;
+}
+
+.text-input-container textarea {
+  width: 100%;
+  min-height: 200px;
+  max-height: 60vh;
+  padding: 12px;
+  border: 1px solid #61dafb;
+  border-radius: 8px;
+  background-color: #3a3f47;
+  color: white;
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.text-input-container button {
+  margin-top: 10px;
+  background-color: #f44336;
+  color: white;
+}

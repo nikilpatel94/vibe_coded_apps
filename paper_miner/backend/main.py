@@ -10,6 +10,14 @@ import re
 import logging
 from dotenv import load_dotenv
 
+# Model mapping
+MODEL_MAPPING = {
+    "scientific_paper": "gemini-2.5-flash",
+    "document": "gemini-2.5-flash",
+    "legal_document": "gemini-2.5-flash",
+    "default": "gemini-2.5-flash"
+}
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -39,9 +47,95 @@ PAPERS_DIR = "./papers"
 os.makedirs(PAPERS_DIR, exist_ok=True)
 
 from typing import Optional
+from pydantic import BaseModel
+
+class TextIn(BaseModel):
+    text: str
+    mode: Optional[str] = "legal_document"
+
+@app.post("/upload-text/")
+async def upload_text(text_in: TextIn):
+    logger.info(f"Received upload request for text with mode: {text_in.mode} (type: {type(text_in.mode)})")
+    
+    try:
+        # Generate a unique ID for the paper
+        paper_id = str(uuid.uuid4())
+        
+        text_content = text_in.text
+
+        if not text_content:
+            logger.error(f"No text provided.")
+            raise HTTPException(status_code=400, detail="No text provided.")
+
+        logger.info("Initializing Gemini model and preparing prompt.")
+        # Initialize the Gemini model
+                # Initialize the Gemini model
+        model_name = MODEL_MAPPING.get(text_in.mode, MODEL_MAPPING["default"])
+        model = genai.GenerativeModel(model_name)
+
+        if text_in.mode == "legal_document":
+            # Define a comprehensive prompt for extracting all required information for legal documents
+            analysis_prompt = f"""Analyze the following legal document text and provide the following information in a JSON format.
+
+            {{
+                "benefits": "What are the benefits that the user is getting?",
+                "traps": "What are the traps imposed by the provider?",
+                "advisability": "Is it advisable to sign it? (Yes/No/Maybe with a brief explanation)"
+            }}
+
+            Document Text:\n\n{text_content}"""
+        else:
+            raise HTTPException(status_code=400, detail="Invalid analysis mode specified. Use 'legal_document'.")
+
+        logger.info("Sending request to Gemini API.")
+        # Generate content using Gemini API
+        response = model.generate_content(analysis_prompt)
+        
+        # Attempt to parse the JSON response
+        try:
+            analysis_data = json.loads(response.text)
+            logger.info(f"Successfully parsed Gemini API response. Analysis Data: {analysis_data}")
+        except json.JSONDecodeError:
+            logger.warning("Direct JSON parsing failed. Attempting to extract JSON from markdown code block.")
+            # If direct JSON parsing fails, try to extract JSON from markdown code block
+            json_match = re.search(r"```json\n([\s\S]*?)\n```", response.text)
+            if json_match:
+                analysis_data = json.loads(json_match.group(1))
+                logger.info(f"Successfully extracted and parsed JSON from markdown code block. Analysis Data: {analysis_data}")
+            else:
+                logger.error("Could not parse JSON from Gemini API response after multiple attempts.")
+                raise ValueError("Could not parse JSON from Gemini API response.")
+
+        logger.info(f"Storing analysis data for paper ID: {paper_id}")
+        # Store data in TinyDB
+        if text_in.mode == "legal_document":
+            data_to_insert = {
+                "id": paper_id,
+                "text": text_content,
+                "mode": text_in.mode, # Store the mode
+                "benefits": analysis_data.get("benefits", "Not Found"),
+                "traps": analysis_data.get("traps", "Not Found"),
+                "advisability": analysis_data.get("advisability", "Not Found")
+            }
+            db.insert(data_to_insert)
+            logger.info(f"Inserted legal document data into DB: {data_to_insert}")
+            return_data = {
+                "id": paper_id,
+                "mode": text_in.mode, # Return the mode
+                "benefits": analysis_data.get("benefits", "Not Found"),
+                "traps": analysis_data.get("traps", "Not Found"),
+                "advisability": analysis_data.get("advisability", "Not Found")
+            }
+            logger.info(f"Returning legal document data: {return_data}")
+            return return_data
+    except Exception as e:
+        logger.exception(f"Error processing text or Gemini API call")
+        raise HTTPException(status_code=500, detail=f"Error processing text or Gemini API call: {e}")
+
 
 @app.post("/upload-pdf/")
 async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scientific_paper"):
+
     logger.info(f"Received upload request for file: {file.filename} with mode: {mode} (type: {type(mode)})")
     if not file.filename.endswith(".pdf"):
         logger.warning(f"Invalid file format received: {file.filename}. Only PDF files are allowed.")
@@ -71,7 +165,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scient
 
         logger.info("Initializing Gemini model and preparing prompt.")
         # Initialize the Gemini model
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model_name = MODEL_MAPPING.get(mode, MODEL_MAPPING["default"])
+        model = genai.GenerativeModel(model_name)
 
         if mode == "scientific_paper":
             # Define a comprehensive prompt for extracting all required information for scientific papers
@@ -99,8 +194,19 @@ async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scient
             }}
 
             Document Text:\n\n{text_content}"""
+        elif mode == "legal_document":
+            # Define a comprehensive prompt for extracting all required information for legal documents
+            analysis_prompt = f"""Analyze the following legal document text and provide the following information in a JSON format.
+
+            {{
+                "benefits": "What are the benefits that the user is getting?",
+                "traps": "What are the traps imposed by the provider?",
+                "advisability": "Is it advisable to sign it? (Yes/No/Maybe with a brief explanation)"
+            }}
+
+            Document Text:\n\n{text_content}"""
         else:
-            raise HTTPException(status_code=400, detail="Invalid analysis mode specified. Use 'scientific_paper' or 'document'.")
+            raise HTTPException(status_code=400, detail="Invalid analysis mode specified. Use 'scientific_paper', 'document', or 'legal_document'.")
 
         logger.info("Sending request to Gemini API.")
         # Generate content using Gemini API
@@ -168,7 +274,6 @@ async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scient
             }
             db.insert(data_to_insert)
             logger.info(f"Inserted document data into DB: {data_to_insert}")
-            logger.info(f"Inserted document data into DB: {data_to_insert}")
             return_data = {
                 "id": paper_id,
                 "filename": file.filename,
@@ -177,6 +282,28 @@ async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scient
                 "summary": analysis_data.get("summary", "Not Found")
             }
             logger.info(f"Returning document data: {return_data}")
+            return return_data
+        elif mode == "legal_document":
+            data_to_insert = {
+                "id": paper_id,
+                "pdf_path": pdf_path,
+                "filename": file.filename,
+                "mode": mode, # Store the mode
+                "benefits": analysis_data.get("benefits", "Not Found"),
+                "traps": analysis_data.get("traps", "Not Found"),
+                "advisability": analysis_data.get("advisability", "Not Found")
+            }
+            db.insert(data_to_insert)
+            logger.info(f"Inserted legal document data into DB: {data_to_insert}")
+            return_data = {
+                "id": paper_id,
+                "filename": file.filename,
+                "mode": mode, # Return the mode
+                "benefits": analysis_data.get("benefits", "Not Found"),
+                "traps": analysis_data.get("traps", "Not Found"),
+                "advisability": analysis_data.get("advisability", "Not Found")
+            }
+            logger.info(f"Returning legal document data: {return_data}")
             return return_data
     except Exception as e:
         logger.exception(f"Error processing PDF or Gemini API call for {file.filename}")
@@ -206,6 +333,15 @@ async def get_history():
                 "filename": p["filename"],
                 "mode": p.get("mode"),
                 "summary": p.get("summary", "Not Found"),
+            })
+        elif p.get("mode") == "legal_document":
+            history_summary.append({
+                "id": p["id"],
+                "filename": p.get("filename"),
+                "mode": p.get("mode"),
+                "benefits": p.get("benefits", "Not Found"),
+                "traps": p.get("traps", "Not Found"),
+                "advisability": p.get("advisability", "Not Found"),
             })
         else: # For backward compatibility with old entries without a mode
             history_summary.append({
@@ -253,6 +389,26 @@ async def get_paper(paper_id: str):
             "important_insights": paper[0].get("important_insights", "Not Found"),
             "summary": paper[0].get("summary", "Not Found")
         }
+    elif paper[0].get("mode") == "legal_document":
+        if "pdf_path" in paper[0]:
+            return {
+                "id": paper[0]["id"],
+                "pdf_path": paper[0]["pdf_path"],
+                "filename": paper[0]["filename"],
+                "mode": paper[0].get("mode"),
+                "benefits": paper[0].get("benefits", "Not Found"),
+                "traps": paper[0].get("traps", "Not Found"),
+                "advisability": paper[0].get("advisability", "Not Found")
+            }
+        else:
+            return {
+                "id": paper[0]["id"],
+                "text": paper[0]["text"],
+                "mode": paper[0].get("mode"),
+                "benefits": paper[0].get("benefits", "Not Found"),
+                "traps": paper[0].get("traps", "Not Found"),
+                "advisability": paper[0].get("advisability", "Not Found")
+            }
     else: # For backward compatibility with old entries without a mode
         return {
             "id": paper[0]["id"],
