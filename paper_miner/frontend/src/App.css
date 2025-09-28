@@ -240,10 +240,9 @@ footer p {
   margin: 20px 0;
 }
 
-.text-input-container textarea {
+.text-input-container textarea,
+.text-input-container input[type="text"] {
   width: 100%;
-  min-height: 200px;
-  max-height: 60vh;
   padding: 12px;
   border: 1px solid #61dafb;
   border-radius: 8px;
@@ -251,11 +250,10 @@ footer p {
   color: white;
   font-size: 1rem;
   box-sizing: border-box;
-  resize: vertical;
 }
 
-.text-input-container button {
-  margin-top: 10px;
-  background-color: #f44336;
-  color: white;
+.text-input-container textarea {
+  min-height: 200px;
+  max-height: 60vh;
+  resize: vertical;
 }

@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from pypdf import PdfReader
 import io
 import google.generativeai as genai
@@ -9,12 +9,15 @@ import json
 import re
 import logging
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
 
 # Model mapping
 MODEL_MAPPING = {
     "scientific_paper": "gemini-2.5-flash",
     "document": "gemini-2.5-flash",
     "legal_document": "gemini-2.5-flash",
+    "web": "gemini-2.5-flash",
     "default": "gemini-2.5-flash"
 }
 
@@ -52,6 +55,10 @@ from pydantic import BaseModel
 class TextIn(BaseModel):
     text: str
     mode: Optional[str] = "legal_document"
+
+class WebIn(BaseModel):
+    url: str
+    mode: Optional[str] = "web"
 
 @app.post("/upload-text/")
 async def upload_text(text_in: TextIn):
@@ -132,9 +139,101 @@ async def upload_text(text_in: TextIn):
         logger.exception(f"Error processing text or Gemini API call")
         raise HTTPException(status_code=500, detail=f"Error processing text or Gemini API call: {e}")
 
+@app.post("/upload-web/")
+async def upload_web(web_in: WebIn):
+    logger.info(f"Received upload request for web page with URL: {web_in.url}")
+
+    try:
+        # Validate URL format
+        if not re.match(r"^https?://", web_in.url):
+            raise HTTPException(status_code=400, detail="Invalid URL format. Please include http:// or https://")
+
+        # Fetch web page content
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+        }
+        response = requests.get(web_in.url, headers=headers)
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        # Parse HTML and extract text
+        soup = BeautifulSoup(response.content, "html.parser")
+        title = soup.title.string if soup.title else "No Title Found"
+        text_content = ' '.join(soup.stripped_strings)
+
+
+        if not text_content:
+            logger.error(f"Could not extract text from URL: {web_in.url}")
+            raise HTTPException(status_code=400, detail="Could not extract text from URL.")
+
+        # Generate a unique ID for the paper
+        paper_id = str(uuid.uuid4())
+
+        logger.info("Initializing Gemini model and preparing prompt.")
+        # Initialize the Gemini model
+        model_name = MODEL_MAPPING.get(web_in.mode, MODEL_MAPPING["default"])
+        model = genai.GenerativeModel(model_name)
+
+        # Define a prompt for summarizing web content
+        analysis_prompt = f"""Analyze the following web page text and provide the following information in a JSON format.
+
+        {{
+            "summary": "Provide a detailed, analytical summary of the web page content.",
+            "takeaways": "List the key takeaways or insights from the text. If there are none, state 'No specific takeaways found'."
+        }}
+
+        Web Page Text:\n\n{text_content}"""
+
+        logger.info("Sending request to Gemini API.")
+        # Generate content using Gemini API
+        response = model.generate_content(analysis_prompt)
+
+        # Attempt to parse the JSON response
+        try:
+            analysis_data = json.loads(response.text)
+            logger.info(f"Successfully parsed Gemini API response. Analysis Data: {analysis_data}")
+        except json.JSONDecodeError:
+            logger.warning("Direct JSON parsing failed. Attempting to extract JSON from markdown code block.")
+            # If direct JSON parsing fails, try to extract JSON from markdown code block
+            json_match = re.search(r"```json\n([\s\S]*?)\n```", response.text)
+            if json_match:
+                analysis_data = json.loads(json_match.group(1))
+                logger.info(f"Successfully extracted and parsed JSON from markdown code block. Analysis Data: {analysis_data}")
+            else:
+                logger.error("Could not parse JSON from Gemini API response after multiple attempts.")
+                raise ValueError("Could not parse JSON from Gemini API response.")
+
+        logger.info(f"Storing analysis data for paper ID: {paper_id}")
+        # Store data in TinyDB
+        data_to_insert = {
+            "id": paper_id,
+            "url": web_in.url,
+            "title": title,
+            "mode": web_in.mode,
+            "summary": analysis_data.get("summary", "Not Found"),
+            "takeaways": analysis_data.get("takeaways", "Not Found")
+        }
+        db.insert(data_to_insert)
+        logger.info(f"Inserted web page data into DB: {data_to_insert}")
+        return_data = {
+            "id": paper_id,
+            "url": web_in.url,
+            "title": title,
+            "mode": web_in.mode,
+            "summary": analysis_data.get("summary", "Not Found"),
+            "takeaways": analysis_data.get("takeaways", "Not Found")
+        }
+        logger.info(f"Returning web page data: {return_data}")
+        return return_data
+    except requests.exceptions.RequestException as e:
+        logger.exception(f"Error fetching URL: {web_in.url}")
+        raise HTTPException(status_code=400, detail=f"Error fetching URL: {e}")
+    except Exception as e:
+        logger.exception(f"Error processing web page or Gemini API call")
+        raise HTTPException(status_code=500, detail=f"Error processing web page or Gemini API call: {e}")
+
 
 @app.post("/upload-pdf/")
-async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scientific_paper"):
+async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
 
     logger.info(f"Received upload request for file: {file.filename} with mode: {mode} (type: {type(mode)})")
     if not file.filename.endswith(".pdf"):
@@ -211,7 +310,6 @@ async def upload_pdf(file: UploadFile = File(...), mode: Optional[str] = "scient
         logger.info("Sending request to Gemini API.")
         # Generate content using Gemini API
         response = model.generate_content(analysis_prompt)
-        print("Raw Gemini API response:", response.text) # <--- Added for debugging
         
         # Attempt to parse the JSON response
         try:
@@ -343,6 +441,14 @@ async def get_history():
                 "traps": p.get("traps", "Not Found"),
                 "advisability": p.get("advisability", "Not Found"),
             })
+        elif p.get("mode") == "web":
+            history_summary.append({
+                "id": p["id"],
+                "mode": p.get("mode"),
+                "title": p.get("title", "Not Found"),
+                "url": p.get("url", "Not Found"),
+                "takeaways": p.get("takeaways", "Not Found")
+            })
         else: # For backward compatibility with old entries without a mode
             history_summary.append({
                 "id": p["id"],
@@ -409,6 +515,15 @@ async def get_paper(paper_id: str):
                 "traps": paper[0].get("traps", "Not Found"),
                 "advisability": paper[0].get("advisability", "Not Found")
             }
+    elif paper[0].get("mode") == "web":
+        return {
+            "id": paper[0]["id"],
+            "url": paper[0]["url"],
+            "title": paper[0]["title"],
+            "mode": paper[0].get("mode"),
+            "summary": paper[0].get("summary", "Not Found"),
+            "takeaways": paper[0].get("takeaways", "Not Found")
+        }
     else: # For backward compatibility with old entries without a mode
         return {
             "id": paper[0]["id"],

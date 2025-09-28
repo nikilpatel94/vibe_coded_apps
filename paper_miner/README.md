@@ -1,31 +1,30 @@
 # Paper Miner
 
 ## Overview
-Paper Miner is a web application designed to help researchers and academics quickly extract key information from PDF research papers. It leverages the power of the Gemini API to analyze paper content and identify novelty, contributions, justified results, and limitations. Additionally, it stores extracted metadata and analysis results locally for easy access and review.
+Paper Miner is a versatile web application designed to help you quickly extract key information and insights from various document types. It leverages the power of the Gemini API to analyze content from PDFs, raw text, and web pages, providing structured and actionable data. Whether you're a researcher, a legal professional, or just someone looking to quickly understand a document, Paper Miner has a mode for you.
 
 ## Features
-- **PDF Upload & Analysis:** Upload PDF research papers for automated analysis.
-- **AI-Powered Extraction:** Utilizes `gemini-2.5-flash` to extract:
-    - Paper Title
-    - Authors
-    - Affiliated Institute
-    - Version/Publication Date
-    - Novelty
-    - Contributions
-    - Justified Results
-    - Limitations/Trade-offs
-- **Local Data Storage:** All extracted information and analysis results are stored in a lightweight, local database (`TinyDB`).
-- **History Feature:** View and re-access previously analyzed papers through a collapsible history panel.
+- **Multiple Analysis Modes:**
+    - **Scientific Paper (PDF):** Extracts title, authors, novelty, contributions, results, and limitations from research papers.
+    - **Generic Document (PDF):** Provides a summary and key insights from general-purpose PDF documents.
+    - **Legal Document (Text):** Analyzes pasted legal text to identify potential benefits, traps, and provides a simple advisability assessment.
+    - **Web Page (URL):** Fetches content from a URL and delivers a detailed summary along with key takeaways.
+- **AI-Powered Extraction:** Utilizes `gemini-2.5-flash` for intelligent content analysis.
+- **Markdown Rendering:** Analysis results are rendered as rich text, preserving formatting like bolding, lists, and italics from the AI's response.
+- **Local Data Storage:** All analysis results are stored in a lightweight, local database (`TinyDB`) for persistence.
+- **History Feature:** View and re-access previously analyzed documents through a collapsible history panel.
 - **Copy Functionality:** Easily copy extracted text from analysis sections to your clipboard.
-- **Responsive UI:** A clean and simple user interface designed for readability, especially for text-heavy content.
+- **Responsive UI:** A clean and simple user interface designed for readability and ease of use.
 
 ## Project Structure
 ```
 paper_miner/
-├── backend/             # FastAPI backend for PDF processing and AI analysis
+├── backend/             # FastAPI backend for processing and AI analysis
 │   ├── main.py          # Main FastAPI application
 │   ├── requirements.txt # Python dependencies
+│   ├── .env             # Environment variables (for API key)
 │   ├── db.json          # TinyDB database file (auto-generated)
+│   ├── backend.log      # Log file (auto-generated)
 │   └── papers/          # Directory for storing uploaded PDFs (auto-generated)
 ├── frontend/            # React.js frontend
 │   ├── public/          # Static assets
@@ -110,11 +109,20 @@ npm start
 The frontend application will open in your browser, usually at `http://localhost:3000`.
 
 ## Usage
-1.  **Upload PDF:** Click the "Choose File" button to select a PDF document.
-2.  **Analyze:** Click "Upload and Analyze PDF" to send the document to the backend for AI processing.
-3.  **View Results:** The extracted metadata and analysis results will be displayed in a clear, stacked card format.
-4.  **Copy Content:** Use the "Copy" button on each analysis section to quickly copy its content.
-5.  **View History:** Click "Show History" to see a list of all previously analyzed papers. Click on any paper in the history to re-load its analysis.
+1.  **Select Mode:** At the top of the page, choose the analysis mode that matches your document type: "Scientific Paper", "Generic Document", "Legal Document", or "Web Page".
+2.  **Provide Input:**
+    - For **PDF-based modes**, a file upload button will appear. Click it to select your PDF.
+    - For **Legal Document** mode, a text area will be available. Paste the text you want to analyze.
+    - For **Web Page** mode, an input field will be available. Enter the full URL of the page to analyze.
+3.  **Analyze:** Click the "Upload and Analyze" button to start the process.
+4.  **View Results:** The extracted information and analysis will be displayed in a clear, stacked card format.
+5.  **Copy Content:** Use the "Copy" button on each analysis section to quickly copy its content.
+6.  **View History:** Click "Show History" to see a list of all previously analyzed documents. Click on any item in the history to re-load its analysis.
+
+## Troubleshooting
+
+### Analysis Errors
+Occasionally, an analysis may fail due to network issues, API timeouts, or other transient problems. The application does not have an automatic retry mechanism built in. If you encounter an error message during analysis, please simply try the action again by clicking the "Upload and Analyze" button.
 
 ## Logging
 - **Backend:** Logs are output to the console and saved to `backend.log` in the `backend` directory.
