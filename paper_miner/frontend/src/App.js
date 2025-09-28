@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './App.css';
 
 function App() {
   const [analysisMode, setAnalysisMode] = useState('scientific_paper');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [textInput, setTextInput] = useState('');
+  const [legalTextInput, setLegalTextInput] = useState('');
+  const [webUrlInput, setWebUrlInput] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,6 +38,14 @@ function App() {
     };
   }, [historyVisible]);
 
+  useEffect(() => {
+    setSelectedFile(null);
+    setLegalTextInput('');
+    setWebUrlInput('');
+    setAnalysisResult(null);
+    setError(null);
+  }, [analysisMode]);
+
   const handleFileChange = (event) => {
     console.log("File selected:", event.target.files[0]?.name);
     setSelectedFile(event.target.files[0]);
@@ -44,7 +55,7 @@ function App() {
 
   const handleUpload = async () => {
     if (analysisMode === 'legal_document') {
-      if (!textInput) {
+      if (!legalTextInput) {
         console.warn("No text provided for analysis.");
         setError("Please paste some text to analyze.");
         return;
@@ -59,7 +70,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ text: textInput, mode: analysisMode }),
+          body: JSON.stringify({ text: legalTextInput, mode: analysisMode }),
         });
 
         if (!response.ok) {
@@ -80,6 +91,42 @@ function App() {
         console.log("Analysis process finished.");
       }
 
+    } else if (analysisMode === 'web') {
+      if (!webUrlInput) {
+        console.warn("No URL provided for analysis.");
+        setError("Please enter a URL to analyze.");
+        return;
+      }
+      console.log("Starting web analysis with URL:", webUrlInput);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch('http://localhost:8000/upload-web/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: webUrlInput, mode: analysisMode }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Analysis failed:", errorData.detail || 'Something went wrong');
+          throw new Error(errorData.detail || 'Something went wrong');
+        }
+
+        const data = await response.json();
+        setAnalysisResult(data);
+        console.log("Analysis successful:", data, "Received mode:", data.mode);
+        setHistoryVisible(true);
+      } catch (err) {
+        console.error("Error during analysis:", err.message);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        console.log("Analysis process finished.");
+      }
     } else {
       if (!selectedFile) {
         console.warn("No file selected for upload.");
@@ -121,8 +168,9 @@ function App() {
   };
 
   const handleCopy = (value, title) => {
-    console.log(`Copying \"${title}\" to clipboard.`);
-    navigator.clipboard.writeText(value);
+    const textToCopy = Array.isArray(value) ? value.join('\n\n') : String(value);
+    console.log(`Copying "${title}" to clipboard.`);
+    navigator.clipboard.writeText(textToCopy);
     alert(`${title} copied to clipboard!`);
   };
 
@@ -143,6 +191,11 @@ function App() {
     }
   };
 
+  const renderMarkdown = (content) => {
+    const text = Array.isArray(content) ? content.join('\n\n') : String(content || "");
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>;
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -152,7 +205,7 @@ function App() {
             <input 
               type="radio" 
               value="scientific_paper" 
-              checked={analysisMode === 'scientific_paper'} 
+              checked={analysisMode === 'scientific_paper'}
               onChange={() => setAnalysisMode('scientific_paper')} 
             />
             Scientific Paper
@@ -161,7 +214,7 @@ function App() {
             <input 
               type="radio" 
               value="document" 
-              checked={analysisMode === 'document'} 
+              checked={analysisMode === 'document'}
               onChange={() => setAnalysisMode('document')} 
             />
             Generic Document
@@ -170,21 +223,41 @@ function App() {
             <input 
               type="radio" 
               value="legal_document" 
-              checked={analysisMode === 'legal_document'} 
+              checked={analysisMode === 'legal_document'}
               onChange={() => setAnalysisMode('legal_document')} 
             />
             Legal Document
           </label>
+          <label>
+            <input
+              type="radio"
+              value="web"
+              checked={analysisMode === 'web'}
+              onChange={() => setAnalysisMode('web')}
+            />
+            Web Page
+          </label>
         </div>
-        <input type="file" accept=".pdf" onChange={handleFileChange} />
+        {analysisMode !== 'web' && analysisMode !== 'legal_document' && (
+          <input key={analysisMode} type="file" accept=".pdf" onChange={handleFileChange} />
+        )}
         {analysisMode === 'legal_document' && (
           <div className="text-input-container">
             <textarea 
-              value={textInput} 
-              onChange={(e) => setTextInput(e.target.value)} 
+              value={legalTextInput} 
+              onChange={(e) => setLegalTextInput(e.target.value)} 
               placeholder="Paste your legal text here"
             />
-            <button onClick={() => setTextInput('')}>Clear</button>
+          </div>
+        )}
+        {analysisMode === 'web' && (
+          <div className="text-input-container">
+            <input
+              type="text"
+              value={webUrlInput}
+              onChange={(e) => setWebUrlInput(e.target.value)}
+              placeholder="Enter URL"
+            />
           </div>
         )}
         <button onClick={handleUpload} disabled={loading}>
@@ -206,8 +279,9 @@ function App() {
               <ul>
                 {historyList.map((paper) => (
                   <li key={paper.id} onClick={() => handleViewHistoryPaper(paper.id)}>
-                    <strong>{paper.title || paper.summary || paper.filename || 'Legal Document'}</strong>
+                    <strong>{paper.mode === 'web' ? `Web Page - ${paper.title}` : paper.title || paper.summary || paper.filename || 'Legal Document'}</strong>
                     {paper.authors && <p>{paper.authors}</p>}
+                    {paper.mode === 'web' && <p>{paper.url}</p>}
                   </li>
                 ))}
               </ul>
@@ -217,7 +291,7 @@ function App() {
 
         {analysisResult && (
           <div className="analysis-results">
-            <h2>Analysis Result for: {analysisResult.filename}</h2>
+            <h2>Analysis Result for: {analysisResult.filename || analysisResult.title}</h2>
             {analysisResult.mode === 'scientific_paper' && (
               <>
                 <p><strong>Title:</strong> {analysisResult.title}</p>
@@ -232,7 +306,7 @@ function App() {
                     <div className="analysis-section" key={key}>
                       <h3>{title}:</h3>
                       <button onClick={() => handleCopy(value, title)} className="copy-button">Copy</button>
-                      <pre>{value}</pre>
+                      {renderMarkdown(value)}
                     </div>
                   );
                 })}
@@ -243,12 +317,12 @@ function App() {
                 <div className="analysis-section">
                   <h3>Important Insights:</h3>
                   <button onClick={() => handleCopy(analysisResult.important_insights, 'Important Insights')} className="copy-button">Copy</button>
-                  <pre>{analysisResult.important_insights}</pre>
+                  {renderMarkdown(analysisResult.important_insights)}
                 </div>
                 <div className="analysis-section">
                   <h3>Summary:</h3>
                   <button onClick={() => handleCopy(analysisResult.summary, 'Summary')} className="copy-button">Copy</button>
-                  <pre>{analysisResult.summary}</pre>
+                  {renderMarkdown(analysisResult.summary)}
                 </div>
               </>
             )}
@@ -257,17 +331,31 @@ function App() {
                 <div className="analysis-section">
                   <h3>Benefits:</h3>
                   <button onClick={() => handleCopy(analysisResult.benefits, 'Benefits')} className="copy-button">Copy</button>
-                  <pre>{analysisResult.benefits}</pre>
+                  {renderMarkdown(analysisResult.benefits)}
                 </div>
                 <div className="analysis-section">
                   <h3>Traps:</h3>
                   <button onClick={() => handleCopy(analysisResult.traps, 'Traps')} className="copy-button">Copy</button>
-                  <pre>{analysisResult.traps}</pre>
+                  {renderMarkdown(analysisResult.traps)}
                 </div>
                 <div className="analysis-section">
                   <h3>Advisability:</h3>
                   <button onClick={() => handleCopy(analysisResult.advisability, 'Advisability')} className="copy-button">Copy</button>
-                  <pre>{analysisResult.advisability}</pre>
+                  {renderMarkdown(analysisResult.advisability)}
+                </div>
+              </>
+            )}
+            {analysisResult.mode === 'web' && (
+              <>
+                <div className="analysis-section">
+                  <h3>Summary:</h3>
+                  <button onClick={() => handleCopy(analysisResult.summary, 'Summary')} className="copy-button">Copy</button>
+                  {renderMarkdown(analysisResult.summary)}
+                </div>
+                <div className="analysis-section">
+                  <h3>Takeaways:</h3>
+                  <button onClick={() => handleCopy(analysisResult.takeaways, 'Takeaways')} className="copy-button">Copy</button>
+                  {renderMarkdown(analysisResult.takeaways)}
                 </div>
               </>
             )}

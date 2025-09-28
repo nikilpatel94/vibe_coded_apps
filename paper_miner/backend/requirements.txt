@@ -6,3 +6,5 @@ pypdf
 google-generativeai
 tinydb
 python-multipart
+requests
+beautifulsoup4
