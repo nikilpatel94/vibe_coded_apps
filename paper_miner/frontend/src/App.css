@@ -1,6 +1,5 @@
 .App {
   text-align: center;
-  font-family: 'Arial', sans-serif;
 }
 
 .App-header {
@@ -37,7 +36,7 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 1.1rem;
   transition: background-color 0.3s ease;
   margin-bottom: 30px;
 }
@@ -54,7 +53,7 @@ button:disabled {
 .error-message {
   color: red;
   margin-top: 15px;
-  font-size: 1.1em;
+  font-size: 1.2em;
 }
 
 .analysis-results {
@@ -91,7 +90,7 @@ button:disabled {
   padding: 15px;
   border-radius: 5px;
   overflow-y: auto;
-  font-size: 0.95em;
+  font-size: 1.05em;
   line-height: 1.6;
   color: #e0e0e0;
   box-sizing: border-box;
@@ -105,7 +104,7 @@ button:disabled {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 1em;
   transition: background-color 0.3s ease;
   position: absolute;
   top: 15px;
@@ -121,7 +120,7 @@ button:disabled {
   color: #61dafb;
   margin-top: 0;
   margin-bottom: 15px;
-  font-size: 1.4em;
+  font-size: 1.5em;
 }
 
 .analysis-section pre {
@@ -131,7 +130,7 @@ button:disabled {
   padding: 15px;
   border-radius: 5px;
   overflow-y: auto;
-  font-size: 0.95em;
+  font-size: 1.05em;
   line-height: 1.6;
   color: #e0e0e0;
   box-sizing: border-box;
@@ -142,7 +141,7 @@ footer {
   margin-top: 40px;
   padding: 20px;
   color: #aaa;
-  font-size: 0.8em;
+  font-size: 0.9em;
   text-align: center;
 }
 
@@ -159,7 +158,7 @@ footer p {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
   transition: background-color 0.3s ease;
 }
 
@@ -205,12 +204,12 @@ footer p {
 
 .history-panel li strong {
   display: block;
-  font-size: 1.1em;
+  font-size: 1.2em;
   color: #61dafb;
 }
 
 .history-panel li p {
-  font-size: 0.9em;
+  font-size: 1em;
   color: #ccc;
   margin: 5px 0 0 0;
 }
@@ -226,7 +225,7 @@ footer p {
   display: flex;
   align-items: center;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 1.2em;
   color: #e0e0e0;
 }
 
@@ -250,8 +249,7 @@ footer p {
   border-radius: 8px;
   background-color: #3a3f47;
   color: white;
-  font-family: 'Arial', sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   box-sizing: border-box;
   resize: vertical;
 }
