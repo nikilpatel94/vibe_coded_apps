@@ -1,0 +1,38 @@
+.clock-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+}
+
+.clock-label {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+.clock-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5em;
+  font-weight: bold;
+  line-height: 1;
+  gap: 0.1em;
+}
+
+.clock-time span {
+  text-align: center;
+}
+
+.clock-time .colon {
+  /* No specific styling needed for colon span, as gap handles spacing */
+}
+
+.clock-time .ampm {
+  font-size: 0.5em; /* Smaller font size for AM/PM */
+  align-self: flex-end; /* Align AM/PM to the bottom */
+  margin-left: 0.2em;
+}
