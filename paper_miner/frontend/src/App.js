@@ -19,7 +19,7 @@ function App() {
     const fetchHistory = async () => {
       try {
         console.log("Fetching history...");
-        const response = await fetch('http://localhost:8000/history');
+        const response = await fetch('http://localhost:8000/history', { cache: 'no-cache' });
         if (!response.ok) {
           throw new Error('Failed to fetch history');
         }
