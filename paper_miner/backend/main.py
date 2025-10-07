@@ -1,11 +1,13 @@
 import os
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader
 import io
 import google.generativeai as genai
 from tinydb import TinyDB, Query
 import uuid
 import json
+import threading
 import re
 import logging
 from dotenv import load_dotenv
@@ -37,12 +39,25 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Configure Gemini API (replace with your actual API key or environment variable)
 # It's recommended to use environment variables for API keys in production
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Initialize TinyDB
 db = TinyDB('db.json')
+db_lock = threading.Lock()
 Paper = Query()
 
 # Directory to store uploaded PDFs
@@ -124,7 +139,8 @@ async def upload_text(text_in: TextIn):
                 "traps": analysis_data.get("traps", "Not Found"),
                 "advisability": analysis_data.get("advisability", "Not Found")
             }
-            db.insert(data_to_insert)
+            with db_lock:
+                db.insert(data_to_insert)
             logger.info(f"Inserted legal document data into DB: {data_to_insert}")
             return_data = {
                 "id": paper_id,
@@ -212,7 +228,8 @@ async def upload_web(web_in: WebIn):
             "summary": analysis_data.get("summary", "Not Found"),
             "takeaways": analysis_data.get("takeaways", "Not Found")
         }
-        db.insert(data_to_insert)
+        with db_lock:
+            db.insert(data_to_insert)
         logger.info(f"Inserted web page data into DB: {data_to_insert}")
         return_data = {
             "id": paper_id,
@@ -343,7 +360,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "results": analysis_data.get("results", "Not Found"),
                 "limitations": analysis_data.get("limitations", "Not Found")
             }
-            db.insert(data_to_insert)
+            with db_lock:
+                db.insert(data_to_insert)
             logger.info(f"Inserted scientific paper data into DB: {data_to_insert}")
             logger.info(f"Inserted scientific paper data into DB: {data_to_insert}")
             return_data = {
@@ -370,7 +388,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "important_insights": analysis_data.get("important_insights", "Not Found"),
                 "summary": analysis_data.get("summary", "Not Found")
             }
-            db.insert(data_to_insert)
+            with db_lock:
+                db.insert(data_to_insert)
             logger.info(f"Inserted document data into DB: {data_to_insert}")
             return_data = {
                 "id": paper_id,
@@ -391,7 +410,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "traps": analysis_data.get("traps", "Not Found"),
                 "advisability": analysis_data.get("advisability", "Not Found")
             }
-            db.insert(data_to_insert)
+            with db_lock:
+                db.insert(data_to_insert)
             logger.info(f"Inserted legal document data into DB: {data_to_insert}")
             return_data = {
                 "id": paper_id,
@@ -410,7 +430,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
 @app.get("/history")
 async def get_history():
     logger.info("Received request for history list.")
-    papers = db.all()
+    with db_lock:
+        papers = db.all()
     logger.info(f"Found {len(papers)} papers in history.")
     # Return a summary for the history list
     history_summary = []
@@ -464,7 +485,8 @@ async def get_history():
 @app.get("/paper/{paper_id}")
 async def get_paper(paper_id: str):
     logger.info(f"Received request for paper details with ID: {paper_id}")
-    paper = db.search(Paper.id == paper_id)
+    with db_lock:
+        paper = db.search(Paper.id == paper_id)
     if not paper:
         logger.warning(f"Paper with ID {paper_id} not found.")
         raise HTTPException(status_code=404, detail="Paper not found")

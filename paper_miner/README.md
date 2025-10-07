@@ -36,77 +36,93 @@ paper_miner/
 └── README.md            # This README file
 ```
 
-## Setup and Installation
-Follow these steps to get Paper Miner up and running on your local machine.
+## Configuration
+This project requires a Google Gemini API key to function. Configuration is handled via a `.env` file. An example file, `.env.example`, is provided in the root directory.
 
-### Prerequisites
-- Python 3.9+ (recommended)
+## Setup and Running the Application
+
+There are two ways to run the application: with Docker (recommended for ease of use) or locally for manual development.
+
+### Running with Docker (Recommended)
+This is the simplest way to get the entire application running.
+
+1.  **Configure API Key:**
+    -   Rename the `.env.example` file in the project root to `.env`.
+    -   Open the `.env` file and add your Google Gemini API key:
+        ```
+        GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+        ```
+
+2.  **Build and Run Containers:**
+    -   Make sure you have Docker and Docker Compose installed.
+    -   Run the following command from the project root:
+        ```bash
+        docker-compose up --build
+        ```
+
+3.  **Access the Application:**
+    -   The frontend will be available at `http://localhost:3000`.
+    -   The backend server will be running at `http://localhost:8000`.
+
+### Running Locally (Manual Setup)
+
+Follow these steps to run the frontend and backend services separately on your local machine.
+
+#### 1. Prerequisites
+- Python 3.9+
 - Node.js and npm (or yarn)
 - Google Gemini API Key
 
-### 1. Clone the Repository
+#### 2. Clone the Repository
 ```bash
 git clone <repository_url>
 cd paper_miner
 ```
 
-### 2. Backend Setup
-Navigate to the `backend` directory, create a Python virtual environment, activate it, and install dependencies.
+#### 3. Backend Setup
+Navigate to the `backend` directory, create and activate a Python virtual environment, and install dependencies.
 
-```bash
-cd backend
-python -m venv venv
-# On Windows:
-.\venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
+1.  **Install Dependencies:**
+    ```bash
+    cd backend
+    python -m venv venv
+    # On Windows:
+    .\venv\Scripts\activate
+    # On macOS/Linux:
+    source venv/bin/activate
+    
+    pip install -r requirements.txt
+    ```
 
-pip install -r requirements.txt
-```
+2.  **Configure API Key:**
+    -   Create a new file named `.env` **inside the `backend` directory**.
+    -   Add your Gemini API key to this file:
+        ```
+        GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+        ```
 
-#### Configure Gemini API Key
-Create a `.env` file in the `backend` directory and add your Gemini API key:
+3.  **Start the Backend Server:**
+    ```bash
+    # Make sure you are in the backend directory with the virtual environment activated
+    uvicorn main:app --reload
+    ```
+    The backend server will run on `http://127.0.0.1:8000`.
 
-```
-GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
-```
+#### 4. Frontend Setup
+Open a **new terminal** for the frontend service.
 
-Replace `YOUR_GEMINI_API_KEY` with your actual API key obtained from Google AI Studio.
+1.  **Install Dependencies:**
+    ```bash
+    cd frontend
+    npm install
+    ```
 
-### 3. Frontend Setup
-Navigate to the `frontend` directory and install Node.js dependencies.
-
-```bash
-cd ../frontend
-npm install
-# or yarn install
-```
-
-## Running the Application
-
-### 1. Start the Backend Server
-Make sure your Python virtual environment is activated (from the `backend` directory):
-
-```bash
-cd ../backend # If you are in frontend directory
-.\venv\Scripts\activate # On Windows
-source venv/bin/activate # On macOS/Linux
-
-uvicorn main:app --reload
-```
-
-The backend server will run on `http://127.0.0.1:8000`.
-
-### 2. Start the Frontend Development Server
-Open a new terminal, navigate to the `frontend` directory, and start the React development server:
-
-```bash
-cd frontend
-npm start
-# or yarn start
-```
-
-The frontend application will open in your browser, usually at `http://localhost:3000`.
+2.  **Start the Frontend Server:**
+    ```bash
+    # Make sure you are in the frontend directory
+    npm start
+    ```
+    The frontend application will open in your browser, usually at `http://localhost:3000`.
 
 ## Usage
 1.  **Select Mode:** At the top of the page, choose the analysis mode that matches your document type: "Scientific Paper", "Generic Document", "Legal Document", or "Web Page".
