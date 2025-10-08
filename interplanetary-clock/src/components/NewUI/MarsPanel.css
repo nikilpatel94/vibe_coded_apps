@@ -1,0 +1,82 @@
+.mars-panel {
+  flex: 1;
+  padding: 15px; /* Increased padding */
+  display: flex;
+  flex-direction: column;
+}
+
+.mars-panel .panel-content {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  gap: 15px; /* Increased gap */
+}
+
+.globe-container {
+  flex: 1.8; /* Give more space to the globe */
+  min-width: 0; /* Prevents flexbox from overflowing */
+}
+
+.data-container {
+  flex: 1; /* Give less space to data, but still flexible */
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Increased gap */
+}
+
+.data-section {
+  border: 1px solid #004d00; /* Darker green border */
+  padding: 10px;
+}
+
+.time-date {
+  display: flex;
+  flex-direction: column; /* Changed to column for better stacking */
+  align-items: flex-start; /* Align items to start */
+}
+
+.time-date .data-item {
+  width: 100%; /* Ensure data items take full width */
+  flex-direction: row; /* Display label and value in a row */
+  justify-content: space-between; /* Space between label and value */
+  align-items: baseline; /* Align text baselines */
+}
+
+.data-item {
+  display: flex;
+  flex-direction: column; /* Default to column for other data items */
+}
+
+.data-label {
+  font-size: 0.8em;
+  color: #00ff00;
+  margin-bottom: 3px;
+}
+
+.data-value {
+  font-size: 1.2em;
+  color: #00ff00;
+  font-weight: bold;
+}
+
+.data-label-small {
+  font-size: 0.7em;
+  color: #00ff00;
+}
+
+.data-value-small {
+  font-size: 0.9em;
+  color: #00ff00;
+}
+
+.geo-activity .data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px; /* Adjusted gap */
+  margin-top: 10px; /* Adjusted margin */
+}
+
+.geo-activity .data-grid .data-item {
+  flex-direction: column; /* Keep column for grid items */
+  align-items: flex-start; /* Align text to start */
+}
