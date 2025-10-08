@@ -17,6 +17,17 @@ h1 {
   margin-bottom: 30px;
 }
 
+.promo-link {
+  color: #61dafb;
+  margin-bottom: 25px;
+  text-decoration: underline;
+  font-size: 1rem;
+}
+
+.promo-link:hover {
+  color: #4fa3d1;
+}
+
 input[type="file"] {
   margin: 20px 0;
   padding: 12px;
@@ -65,6 +76,42 @@ button:disabled {
   margin: 30px auto; /* Centering horizontally */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: block; /* Stack elements vertically */
+}
+
+.analysis-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.analysis-results-header h2 {
+  margin: 0;
+}
+
+.analysis-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.export-button {
+  margin-bottom: 0;
+  white-space: nowrap;
+  padding: 10px 20px;
+}
+
+.github-link {
+  color: #61dafb;
+  text-decoration: underline;
+  font-size: 0.95rem;
+}
+
+.github-link:hover {
+  color: #4fa3d1;
 }
 
 .analysis-section {

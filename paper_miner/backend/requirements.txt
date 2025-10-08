@@ -8,3 +8,7 @@ tinydb
 python-multipart
 requests
 beautifulsoup4
+fpdf2
+pytest
+httpx
+markdown

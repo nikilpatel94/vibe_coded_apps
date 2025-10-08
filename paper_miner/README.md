@@ -10,7 +10,8 @@ Paper Miner is a versatile web application designed to help you quickly extract 
     - **Legal Document (Text):** Analyzes pasted legal text to identify potential benefits, traps, and provides a simple advisability assessment.
     - **Web Page (URL):** Fetches content from a URL and delivers a detailed summary along with key takeaways.
 - **AI-Powered Extraction:** Utilizes `gemini-2.5-flash` for intelligent content analysis.
-- **Markdown Rendering:** Analysis results are rendered as rich text, preserving formatting like bolding, lists, and italics from the AI's response.
+- **Rich Markdown Output:** Analysis results and exported reports preserve bolding, lists, and other markdown formatting for readability.
+- **One-Click PDF Export:** Download a polished PDF for any analysis, complete with author credit for the active LLM model and a quick link back to this repository.
 - **Local Data Storage:** All analysis results are stored in a lightweight, local database (`TinyDB`) for persistence.
 - **History Feature:** View and re-access previously analyzed documents through a collapsible history panel.
 - **Copy Functionality:** Easily copy extracted text from analysis sections to your clipboard.
@@ -23,8 +24,8 @@ paper_miner/
 │   ├── main.py          # Main FastAPI application
 │   ├── requirements.txt # Python dependencies
 │   ├── .env             # Environment variables (for API key)
-│   ├── db.json          # TinyDB database file (auto-generated)
-│   ├── backend.log      # Log file (auto-generated)
+│   ├── db.json          # TinyDB database file (auto-generated, configurable path)
+│   ├── backend.log      # Log file (auto-generated, configurable path)
 │   └── papers/          # Directory for storing uploaded PDFs (auto-generated)
 ├── frontend/            # React.js frontend
 │   ├── public/          # Static assets
@@ -38,6 +39,19 @@ paper_miner/
 
 ## Configuration
 This project requires a Google Gemini API key to function. Configuration is handled via a `.env` file. An example file, `.env.example`, is provided in the root directory.
+
+### Environment Variables
+
+Set these key/value pairs in your `.env` file (root for Docker, `backend/.env` for local development):
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Google Gemini API key | _required_ |
+| `DB_PATH` | Location of the TinyDB database | `backend/db.json` |
+| `BACKEND_LOG_PATH` | Location of the backend log file | `backend/backend.log` |
+| `PAPERS_DIR` | Directory to store uploaded PDFs | `backend/papers/` |
+
+You can point the paths back to the project root (e.g. `DB_PATH=./db.json`) if you prefer the previous layout.
 
 ## Setup and Running the Application
 
@@ -63,6 +77,8 @@ This is the simplest way to get the entire application running.
 3.  **Access the Application:**
     -   The frontend will be available at `http://localhost:3000`.
     -   The backend server will be running at `http://localhost:8000`.
+
+> **Build-time tests:** The backend Dockerfile uses a multi-stage build that installs dependencies and runs `pytest` before starting Uvicorn. `docker-compose up --build` will therefore fail fast if the backend test suite does not pass.
 
 ### Running Locally (Manual Setup)
 
@@ -101,7 +117,12 @@ Navigate to the `backend` directory, create and activate a Python virtual enviro
         GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
         ```
 
-3.  **Start the Backend Server:**
+3.  **Run Tests (optional but recommended):**
+    ```bash
+    pytest
+    ```
+
+4.  **Start the Backend Server:**
     ```bash
     # Make sure you are in the backend directory with the virtual environment activated
     uvicorn main:app --reload
@@ -141,8 +162,18 @@ Open a **new terminal** for the frontend service.
 Occasionally, an analysis may fail due to network issues, API timeouts, or other transient problems. The application does not have an automatic retry mechanism built in. If you encounter an error message during analysis, please simply try the action again by clicking the "Upload and Analyze" button.
 
 ## Logging
-- **Backend:** Logs are output to the console and saved to `backend.log` in the `backend` directory.
+- **Backend:** Logs are output to the console and saved to `backend.log` (path configurable via `BACKEND_LOG_PATH`).
 - **Frontend:** Logs are output to your browser's developer console.
+
+## Testing
+
+Run the automated backend suite from the `backend` directory:
+
+```bash
+pytest
+```
+
+The tests rely on temporary directories and respect the environment variables documented above, so they leave no stray files behind (even when run from IDEs or alternate working directories). Docker builds also execute the test suite before producing a runnable image.
 
 ## Credits
 Developed by Gemini CLI with `gemini-2.5-flash`

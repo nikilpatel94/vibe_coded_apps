@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pypdf import PdfReader
 import io
 import google.generativeai as genai
@@ -13,6 +14,12 @@ import logging
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
+from fpdf import FPDF, HTMLMixin
+import markdown as md
+from html import escape
+from pathlib import Path
+
+REPO_URL = "https://github.com/nikilpatel94/vibe_coded_apps/tree/main/paper_miner"
 
 # Model mapping
 MODEL_MAPPING = {
@@ -26,12 +33,26 @@ MODEL_MAPPING = {
 # Load environment variables from .env file
 load_dotenv()
 
+# Base directory for backend resources
+BASE_DIR = Path(__file__).resolve().parent
+
+# Directory to store uploaded PDFs (configurable via environment)
+DEFAULT_PAPERS_DIR = BASE_DIR / "papers"
+PAPERS_DIR = Path(os.environ.get("PAPERS_DIR", DEFAULT_PAPERS_DIR))
+
+# Paths for database and log file (configurable via environment)
+DB_PATH = Path(os.environ.get("DB_PATH", BASE_DIR / "db.json"))
+LOG_PATH = Path(os.environ.get("BACKEND_LOG_PATH", BASE_DIR / "backend.log"))
+
+
 # Configure logging
+LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO, # Set the logging level (INFO, DEBUG, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("backend.log"), # Log to a file
+        logging.FileHandler(str(LOG_PATH)), # Log to a file
         logging.StreamHandler() # Log to console
     ]
 )
@@ -56,13 +77,14 @@ app.add_middleware(
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Initialize TinyDB
-db = TinyDB('db.json')
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+db = TinyDB(str(DB_PATH))
 db_lock = threading.Lock()
 Paper = Query()
 
-# Directory to store uploaded PDFs
-PAPERS_DIR = "./papers"
-os.makedirs(PAPERS_DIR, exist_ok=True)
+
+def ensure_papers_dir():
+    PAPERS_DIR.mkdir(parents=True, exist_ok=True)
 
 from typing import Optional
 from pydantic import BaseModel
@@ -74,6 +96,121 @@ class TextIn(BaseModel):
 class WebIn(BaseModel):
     url: str
     mode: Optional[str] = "web"
+
+
+def _stringify(value):
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return "\n\n".join(str(item) for item in value)
+    return str(value)
+
+
+def _safe_pdf_text(value: str) -> str:
+    return _stringify(value).encode("latin-1", "ignore").decode("latin-1")
+
+
+def _prepare_pdf_sections(record):
+    mode = record.get("mode", "scientific_paper")
+    sections = []
+
+    if mode == "scientific_paper":
+        sections.extend([
+            ("Authors", _stringify(record.get("authors", "Not Found"))),
+            ("Affiliated Institute", _stringify(record.get("affiliated_institute", "Not Found"))),
+            ("Version", _stringify(record.get("version", "Not Found"))),
+            ("Novelty", _stringify(record.get("novelty", "Not Found"))),
+            ("Contributions", _stringify(record.get("contributions", "Not Found"))),
+            ("Results", _stringify(record.get("results", "Not Found"))),
+            ("Limitations", _stringify(record.get("limitations", "Not Found"))),
+        ])
+    elif mode == "document":
+        sections.extend([
+            ("Important Insights", _stringify(record.get("important_insights", "Not Found"))),
+            ("Summary", _stringify(record.get("summary", "Not Found"))),
+        ])
+    elif mode == "legal_document":
+        sections.extend([
+            ("Benefits", _stringify(record.get("benefits", "Not Found"))),
+            ("Traps", _stringify(record.get("traps", "Not Found"))),
+            ("Advisability", _stringify(record.get("advisability", "Not Found"))),
+        ])
+    elif mode == "web":
+        sections.extend([
+            ("URL", _stringify(record.get("url", "Not Found"))),
+            ("Summary", _stringify(record.get("summary", "Not Found"))),
+            ("Takeaways", _stringify(record.get("takeaways", "Not Found"))),
+        ])
+    else:
+        for key, value in record.items():
+            if key in {"id", "pdf_path", "filename", "mode", "title"}:
+                continue
+            sections.append((key.replace("_", " ").title(), _stringify(value)))
+
+    filtered_sections = [(header, text) for header, text in sections if _stringify(text).strip()]
+    return filtered_sections or [("Summary", "No data available for this entry.")]
+
+
+def _derive_pdf_title(record):
+    mode = record.get("mode", "scientific_paper")
+    default_titles = {
+        "scientific_paper": "Scientific Paper Summary",
+        "document": "Document Summary",
+        "legal_document": "Legal Document Summary",
+        "web": "Web Page Summary",
+    }
+    return _stringify(record.get("title")) or _stringify(record.get("filename")) or default_titles.get(mode, "Analysis Summary")
+
+
+class MarkdownPDF(FPDF, HTMLMixin):
+    pass
+
+
+def generate_pdf_content(record, author):
+    pdf_title = _derive_pdf_title(record)
+    sections = _prepare_pdf_sections(record)
+
+    pdf = MarkdownPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_title(pdf_title)
+    pdf.set_author(author)
+
+    pdf.set_font("Arial", "B", 18)
+    pdf.set_text_color(30, 30, 30)
+    pdf.multi_cell(0, 10, _safe_pdf_text(pdf_title), align="C")
+    pdf.ln(5)
+
+    pdf.set_font("Arial", "I", 11)
+    pdf.set_text_color(90, 90, 90)
+    pdf.multi_cell(0, 8, _safe_pdf_text(f"Generated by: {author}"), align="C")
+    pdf.ln(2)
+    pdf.set_font("Arial", "", 11)
+    pdf.set_text_color(60, 120, 200)
+    pdf.multi_cell(0, 8, _safe_pdf_text("Project GitHub Repository"), align="C", link=REPO_URL)
+    pdf.ln(8)
+
+    pdf.set_text_color(40, 40, 40)
+
+    pdf.set_font("Arial", "", 12)
+
+    for header, body in sections:
+        header_html = f"<h3>{escape(header)}</h3>"
+        body_markdown = _stringify(body)
+        body_html = md.markdown(body_markdown, extensions=["extra", "sane_lists", "nl2br"])
+        combined_html = header_html + body_html + "<br>"
+        pdf.write_html(_safe_pdf_text(combined_html))
+        pdf.ln(2)
+
+    footer_html = (
+        f"<hr><p>Discover more at <a href=\"{REPO_URL}\">{REPO_URL}</a></p>"
+    )
+    pdf.write_html(_safe_pdf_text(footer_html))
+
+    raw = pdf.output(dest="S")
+    if isinstance(raw, str):
+        return raw.encode("latin-1", "ignore")
+    return bytes(raw)
 
 @app.post("/upload-text/")
 async def upload_text(text_in: TextIn):
@@ -261,16 +398,18 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
         # Generate a unique ID for the paper
         paper_id = str(uuid.uuid4())
         pdf_filename = f"{paper_id}_{file.filename}"
-        pdf_path = os.path.join(PAPERS_DIR, pdf_filename)
+        ensure_papers_dir()
+        pdf_path = PAPERS_DIR / pdf_filename
 
         logger.info(f"Saving PDF to {pdf_path}")
         # Save the PDF file locally
-        with open(pdf_path, "wb") as buffer:
+        with pdf_path.open("wb") as buffer:
             buffer.write(await file.read())
 
         logger.info(f"Extracting text from PDF: {file.filename}")
         # Read the PDF file content
-        pdf_reader = PdfReader(io.BytesIO(open(pdf_path, "rb").read()))
+        with pdf_path.open("rb") as f_obj:
+            pdf_reader = PdfReader(io.BytesIO(f_obj.read()))
         text_content = ""
         for page in pdf_reader.pages:
             text_content += page.extract_text()
@@ -348,7 +487,7 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
         if mode == "scientific_paper":
             data_to_insert = {
                 "id": paper_id,
-                "pdf_path": pdf_path,
+                "pdf_path": str(pdf_path),
                 "filename": file.filename,
                 "mode": mode, # Store the mode
                 "title": analysis_data.get("title", "Not Found"),
@@ -382,7 +521,7 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
         elif mode == "document":
             data_to_insert = {
                 "id": paper_id,
-                "pdf_path": pdf_path,
+                "pdf_path": str(pdf_path),
                 "filename": file.filename,
                 "mode": mode, # Store the mode
                 "important_insights": analysis_data.get("important_insights", "Not Found"),
@@ -403,7 +542,7 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
         elif mode == "legal_document":
             data_to_insert = {
                 "id": paper_id,
-                "pdf_path": pdf_path,
+                "pdf_path": str(pdf_path),
                 "filename": file.filename,
                 "mode": mode, # Store the mode
                 "benefits": analysis_data.get("benefits", "Not Found"),
@@ -561,6 +700,40 @@ async def get_paper(paper_id: str):
             "results": paper[0].get("results", "Not Found"),
             "limitations": paper[0].get("limitations", "Not Found")
         }
+
+
+@app.get("/export-summary/{paper_id}")
+async def export_summary(paper_id: str):
+    logger.info(f"Received request to export PDF for paper ID: {paper_id}")
+    with db_lock:
+        paper = db.search(Paper.id == paper_id)
+    if not paper:
+        logger.warning(f"Paper with ID {paper_id} not found for export.")
+        raise HTTPException(status_code=404, detail="Paper not found")
+
+    record = paper[0]
+    mode = record.get("mode", "scientific_paper")
+    model_name = MODEL_MAPPING.get(mode, MODEL_MAPPING["default"])
+
+    try:
+        pdf_bytes = generate_pdf_content(record, author=model_name)
+    except Exception as e:
+        logger.exception("Failed to generate PDF content")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {e}")
+
+    filename_hint = _derive_pdf_title(record) or f"{mode}_summary"
+    safe_filename = re.sub(r"[^A-Za-z0-9_.-]", "_", filename_hint).strip("_") or f"{mode}_summary"
+
+    pdf_stream = io.BytesIO(pdf_bytes)
+    pdf_stream.seek(0)
+
+    headers = {
+        "Content-Disposition": f"attachment; filename=\"{safe_filename}.pdf\"",
+        "X-Model-Author": model_name,
+    }
+
+    logger.info(f"Successfully generated PDF for paper ID: {paper_id}")
+    return StreamingResponse(pdf_stream, media_type="application/pdf", headers=headers)
 
 if __name__ == "__main__":
     import uvicorn
