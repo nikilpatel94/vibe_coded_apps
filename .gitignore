@@ -1,2 +1,7 @@
 .vscode/*
 interplanetary-clock/archive/*
+/interplanetary-clock/.env
+interplanetary-clock/backend/__pycache__/*
+interplanetary-clock/backend/tests/__pycache__/*
+interplanetary-clock/.env
+interplanetary-clock/backend/.env

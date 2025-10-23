@@ -5,8 +5,17 @@ import MarsGlobe from './MarsGlobe';
 import './MarsPanel.css';
 import { earthToMarsTime, formatMarsTime, getMarsSolDate, getMartianYear } from '../../utils/marsTimeConverter';
 
+const locationOptions = [
+  'GALE CRATER',
+  'JEZERO CRATER',
+  'OLYMPUS MONS',
+  'VALLES MARINERIS',
+];
+
 function MarsPanel() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedLocation, setSelectedLocation] = useState(locationOptions[0]);
+  const [locationData, setLocationData] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -16,8 +25,22 @@ function MarsPanel() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/mars/${selectedLocation}`)
+      .then(response => response.json())
+      .then(data => setLocationData(data));
+  }, [selectedLocation]);
+
+  const handleLocationChange = (event) => {
+    setSelectedLocation(event.target.value);
+  };
+
+  if (!locationData) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
+
   const { msd, mtc } = earthToMarsTime(currentTime);
-  const { hours, minutes, seconds } = formatMarsTime(mtc);
+  const { hours, minutes, seconds } = formatMarsTime(mtc + locationData.timeOffset);
   const sol = getMarsSolDate(msd);
   const martianYear = getMartianYear(msd);
 
@@ -28,9 +51,21 @@ function MarsPanel() {
     timeZone: 'UTC',
   }).format(currentTime);
 
+  const getDayNightEmoji = () => {
+    const dawn = parseFloat(locationData.solarDawn.replace(':', '.'));
+    const dusk = dawn + 12; // Estimate dusk to be 12 hours after dawn
+    const currentMarsTime = parseFloat(hours + '.' + minutes);
+
+    if (currentMarsTime > dawn && currentMarsTime < dusk) {
+      return '☀️';
+    } else {
+      return '🌙';
+    }
+  };
+
   return (
     <div className="panel mars-panel">
-      <div className="panel-header">MARS LOCAL | SOL/ET</div>
+      <div className="panel-header">MARS LOCAL | {selectedLocation}</div>
       <div className="panel-content">
         <div className="globe-container">
           <Canvas camera={{ position: [0, 0, 4], fov: 75 }}>
@@ -46,7 +81,7 @@ function MarsPanel() {
           <div className="data-section time-date">
             <div className="data-item">
               <div className="data-label">TIME (SOL)</div>
-              <div className="data-value">{`${hours}:${minutes}:${seconds}`}</div>
+              <div className="data-value">{`${hours}:${minutes}:${seconds}`} {getDayNightEmoji()}</div>
             </div>
             <div className="data-item">
               <div className="data-label">SOL DATE</div>
@@ -57,16 +92,24 @@ function MarsPanel() {
               <div className="data-value">{earthEquivalentDate}</div>
             </div>
           </div>
+          <div className="data-section location">
+            <div className="data-label">LOCATION</div>
+            <select className="location-selector" value={selectedLocation} onChange={handleLocationChange}>
+              {locationOptions.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
           <div className="data-section geo-activity">
             <div className="data-label">MARS ATMOSPHERIC & GEOLOGICAL MONITOR</div>
             <div className="data-grid">
               <div className="data-item">
-                <div className="data-label-small">SOLAR DAWN (GALE CRATER)</div>
-                <div className="data-value-small">05:30</div>
+                <div className="data-label-small">SOLAR DAWN</div>
+                <div className="data-value-small">{locationData.solarDawn}</div>
               </div>
               <div className="data-item">
                 <div className="data-label-small">SOL LENGTH</div>
-                <div className="data-value-small">24H 39M</div>
+                <div className="data-value-small">{locationData.solLength}</div>
               </div>
               <div className="data-item">
                 <div className="data-label-small">ROTATION SPEED</div>
@@ -74,23 +117,23 @@ function MarsPanel() {
               </div>
               <div className="data-item">
                 <div className="data-label-small">SEISMIC ACTIVITY</div>
-                <div className="data-value-small">0 Marsquakes</div>
+                <div className="data-value-small">{locationData.seismic}</div>
               </div>
               <div className="data-item">
                 <div className="data-label-small">LOCAL WIND SPEEDS (24 SOLS)</div>
-                <div className="data-value-small">0 Events | Gusts</div>
+                <div className="data-value-small">{locationData.windSpeeds}</div>
               </div>
               <div className="data-item">
-                <div className="data-label-small">LOCAL WIND SPEED (JEZERO)</div>
-                <div className="data-value-small">Avg. 15 km/h</div>
+                <div className="data-label-small">LOCAL WIND SPEED</div>
+                <div className="data-value-small">{locationData.localWind}</div>
               </div>
               <div className="data-item">
                 <div className="data-label-small">ATMOSPHERIC PRESSURE</div>
-                <div className="data-value-small">7.5 hPa</div>
+                <div className="data-value-small">{locationData.pressure}</div>
               </div>
               <div className="data-item">
                 <div className="data-label-small">TEMP</div>
-                <div className="data-value-small">-63° C</div>
+                <div className="data-value-small">{locationData.temp}</div>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 .mars-panel {
   flex: 1;
-  padding: 15px; /* Increased padding */
+  padding: 15px;
   display: flex;
   flex-direction: column;
 }
@@ -9,74 +9,82 @@
   display: flex;
   flex: 1;
   width: 100%;
-  gap: 15px; /* Increased gap */
+  gap: 15px;
 }
 
-.globe-container {
-  flex: 1.8; /* Give more space to the globe */
-  min-width: 0; /* Prevents flexbox from overflowing */
+.mars-panel .globe-container {
+  flex: 1.8;
+  min-width: 0;
 }
 
-.data-container {
-  flex: 1; /* Give less space to data, but still flexible */
+.mars-panel .data-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Increased gap */
+  gap: 15px;
 }
 
-.data-section {
-  border: 1px solid #004d00; /* Darker green border */
+.mars-panel .data-section {
+  border: 1px solid #660000; /* Darker red border */
   padding: 10px;
 }
 
-.time-date {
+.mars-panel .time-date {
   display: flex;
-  flex-direction: column; /* Changed to column for better stacking */
-  align-items: flex-start; /* Align items to start */
+  flex-direction: column;
+  gap: 10px; /* Add gap between time and date */
 }
 
-.time-date .data-item {
-  width: 100%; /* Ensure data items take full width */
-  flex-direction: row; /* Display label and value in a row */
-  justify-content: space-between; /* Space between label and value */
-  align-items: baseline; /* Align text baselines */
-}
-
-.data-item {
+.mars-panel .time-date .data-item {
+  width: 100%;
   display: flex;
-  flex-direction: column; /* Default to column for other data items */
+  flex-direction: column; /* Stack label and value vertically */
+  align-items: flex-start;
 }
 
-.data-label {
-  font-size: 0.8em;
-  color: #00ff00;
-  margin-bottom: 3px;
+.mars-panel .data-item {
+  display: flex;
+  flex-direction: column;
 }
 
-.data-value {
-  font-size: 1.2em;
-  color: #00ff00;
+.mars-panel .data-label {
+  font-size: 0.9em; /* Slightly larger label */
+  color: #ff4444; /* Light red */
+  margin-bottom: 5px;
+}
+
+.mars-panel .data-value {
+  font-size: 1.8em; /* Larger data value */
+  color: #ff4444; /* Light red */
   font-weight: bold;
 }
 
-.data-label-small {
-  font-size: 0.7em;
-  color: #00ff00;
+.mars-panel .data-label-small {
+  font-size: 0.8em;
+  color: #ff4444; /* Light red */
 }
 
-.data-value-small {
-  font-size: 0.9em;
-  color: #00ff00;
+.mars-panel .data-value-small {
+  font-size: 1em;
+  color: #ff4444; /* Light red */
 }
 
-.geo-activity .data-grid {
+.mars-panel .geo-activity .data-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px; /* Adjusted gap */
-  margin-top: 10px; /* Adjusted margin */
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.geo-activity .data-grid .data-item {
-  flex-direction: column; /* Keep column for grid items */
-  align-items: flex-start; /* Align text to start */
+.mars-panel .geo-activity .data-grid .data-item {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.mars-panel .location-selector {
+  background-color: #290000;
+  color: #ff4444;
+  border: 1px solid #660000;
+  padding: 5px;
+  width: 100%;
 }

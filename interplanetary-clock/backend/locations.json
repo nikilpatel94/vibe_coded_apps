@@ -1,0 +1,22 @@
+{
+  "New York": { "lat": 40.7128, "lon": -74.0060, "tz": "America/New_York" },
+  "London": { "lat": 51.5074, "lon": -0.1278, "tz": "Europe/London" },
+  "Tokyo": { "lat": 35.6895, "lon": 139.6917, "tz": "Asia/Tokyo" },
+  "Sydney": { "lat": -33.8688, "lon": 151.2093, "tz": "Australia/Sydney" },
+  "Paris": { "lat": 48.8566, "lon": 2.3522, "tz": "Europe/Paris" },
+  "Beijing": { "lat": 39.9042, "lon": 116.4074, "tz": "Asia/Shanghai" },
+  "Cairo": { "lat": 30.0444, "lon": 31.2357, "tz": "Africa/Cairo" },
+  "Rio de Janeiro": { "lat": -22.9068, "lon": -43.1729, "tz": "America/Sao_Paulo" },
+  "Moscow": { "lat": 55.7558, "lon": 37.6173, "tz": "Europe/Moscow" },
+  "Dubai": { "lat": 25.276987, "lon": 55.296249, "tz": "Asia/Dubai" },
+  "Singapore": { "lat": 1.3521, "lon": 103.8198, "tz": "Asia/Singapore" },
+  "Rome": { "lat": 41.9028, "lon": 12.4964, "tz": "Europe/Rome" },
+  "Los Angeles": { "lat": 34.0522, "lon": -118.2437, "tz": "America/Los_Angeles" },
+  "Chicago": { "lat": 41.8781, "lon": -87.6298, "tz": "America/Chicago" },
+  "Mumbai": { "lat": 19.0760, "lon": 72.8777, "tz": "Asia/Kolkata" },
+  "Shanghai": { "lat": 31.2304, "lon": 121.4737, "tz": "Asia/Shanghai" },
+  "Buenos Aires": { "lat": -34.6037, "lon": -58.3816, "tz": "America/Argentina/Buenos_Aires" },
+  "Mexico City": { "lat": 19.4326, "lon": -99.1332, "tz": "America/Mexico_City" },
+  "Istanbul": { "lat": 41.0082, "lon": 28.9784, "tz": "Europe/Istanbul" },
+  "Lagos": { "lat": 6.5244, "lon": 3.3792, "tz": "Africa/Lagos" }
+}
