@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './App.css';
+import HistoryPanel from './HistoryPanel';
 
 function App() {
   const [analysisMode, setAnalysisMode] = useState('scientific_paper');
@@ -313,24 +314,11 @@ function App() {
           {historyVisible ? 'Hide History' : 'Show History'}
         </button>
 
-        {historyVisible && (
-          <div className="history-panel">
-            <h2>Analysis History</h2>
-            {historyList.length === 0 ? (
-              <p>No analysis history found.</p>
-            ) : (
-              <ul>
-                {historyList.map((paper) => (
-                  <li key={paper.id} onClick={() => handleViewHistoryPaper(paper.id)}>
-                    <strong>{paper.mode === 'web' ? `Web Page - ${paper.title}` : paper.title || paper.summary || paper.filename || 'Legal Document'}</strong>
-                    {paper.authors && <p>{paper.authors}</p>}
-                    {paper.mode === 'web' && <p>{paper.url}</p>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        <HistoryPanel 
+          historyList={historyList}
+          handleViewHistoryPaper={handleViewHistoryPaper}
+          historyVisible={historyVisible}
+        />
 
         {analysisResult && (
           <div className="analysis-results">

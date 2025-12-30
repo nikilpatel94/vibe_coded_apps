@@ -1,0 +1,76 @@
+.history-panel {
+  padding: 20px;
+  background-color: #3a3f47;
+  border-top: 1px solid #ddd;
+}
+
+.history-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.search-bar {
+  width: 70%;
+  padding: 10px;
+  border: 1px solid #61dafb;
+  border-radius: 5px;
+  background-color: #3a3f47;
+  color: white;
+}
+
+.sort-dropdown {
+  width: 25%;
+  padding: 10px;
+  border: 1px solid #61dafb;
+  border-radius: 5px;
+  background-color: #3a3f47;
+  color: white;
+}
+
+.history-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.history-card {
+  background-color: #282c34;
+  border: 1px solid #61dafb;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.history-card:hover {
+  box-shadow: 0 4px 8px rgba(97, 218, 251, 0.2);
+}
+
+.history-card h3 {
+  margin-top: 0;
+  font-size: 1.1em;
+  color: #61dafb;
+}
+
+.history-card-date {
+  font-size: 0.8em;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+.history-card p {
+  font-size: 0.9em;
+  color: #ccc;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.history-panel h2 {
+  color: #61dafb;
+}
+
