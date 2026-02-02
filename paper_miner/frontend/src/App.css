@@ -213,7 +213,7 @@ footer p {
   background-color: #45a049;
 }
 
-.history-panel {
+/* .history-panel {
   background-color: #3a3f47;
   border-radius: 10px;
   padding: 20px;
@@ -259,7 +259,7 @@ footer p {
   font-size: 1em;
   color: #ccc;
   margin: 5px 0 0 0;
-}
+} */
 
 .mode-toggle {
   display: flex;

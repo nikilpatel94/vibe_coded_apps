@@ -18,6 +18,7 @@ from fpdf import FPDF, HTMLMixin
 import markdown as md
 from html import escape
 from pathlib import Path
+from datetime import datetime, timezone
 
 REPO_URL = "https://github.com/nikilpatel94/vibe_coded_apps/tree/main/paper_miner"
 
@@ -274,7 +275,8 @@ async def upload_text(text_in: TextIn):
                 "mode": text_in.mode, # Store the mode
                 "benefits": analysis_data.get("benefits", "Not Found"),
                 "traps": analysis_data.get("traps", "Not Found"),
-                "advisability": analysis_data.get("advisability", "Not Found")
+                "advisability": analysis_data.get("advisability", "Not Found"),
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             with db_lock:
                 db.insert(data_to_insert)
@@ -363,7 +365,8 @@ async def upload_web(web_in: WebIn):
             "title": title,
             "mode": web_in.mode,
             "summary": analysis_data.get("summary", "Not Found"),
-            "takeaways": analysis_data.get("takeaways", "Not Found")
+            "takeaways": analysis_data.get("takeaways", "Not Found"),
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
         with db_lock:
             db.insert(data_to_insert)
@@ -497,7 +500,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "novelty": analysis_data.get("novelty", "Not Found"),
                 "contributions": analysis_data.get("contributions", "Not Found"),
                 "results": analysis_data.get("results", "Not Found"),
-                "limitations": analysis_data.get("limitations", "Not Found")
+                "limitations": analysis_data.get("limitations", "Not Found"),
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             with db_lock:
                 db.insert(data_to_insert)
@@ -525,7 +529,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "filename": file.filename,
                 "mode": mode, # Store the mode
                 "important_insights": analysis_data.get("important_insights", "Not Found"),
-                "summary": analysis_data.get("summary", "Not Found")
+                "summary": analysis_data.get("summary", "Not Found"),
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             with db_lock:
                 db.insert(data_to_insert)
@@ -547,7 +552,8 @@ async def upload_pdf(file: UploadFile = File(...), mode: str = Form(...)):
                 "mode": mode, # Store the mode
                 "benefits": analysis_data.get("benefits", "Not Found"),
                 "traps": analysis_data.get("traps", "Not Found"),
-                "advisability": analysis_data.get("advisability", "Not Found")
+                "advisability": analysis_data.get("advisability", "Not Found"),
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             with db_lock:
                 db.insert(data_to_insert)
@@ -584,6 +590,7 @@ async def get_history():
                 "authors": p.get("authors", "Not Found"),
                 "affiliated_institute": p.get("affiliated_institute", "Not Found"),
                 "version": p.get("version", "Not Found"),
+                "created_at": p.get("created_at", "Not Found")
             })
         elif p.get("mode") == "document":
             history_summary.append({
@@ -591,6 +598,7 @@ async def get_history():
                 "filename": p["filename"],
                 "mode": p.get("mode"),
                 "summary": p.get("summary", "Not Found"),
+                "created_at": p.get("created_at", "Not Found")
             })
         elif p.get("mode") == "legal_document":
             history_summary.append({
@@ -600,6 +608,7 @@ async def get_history():
                 "benefits": p.get("benefits", "Not Found"),
                 "traps": p.get("traps", "Not Found"),
                 "advisability": p.get("advisability", "Not Found"),
+                "created_at": p.get("created_at", "Not Found")
             })
         elif p.get("mode") == "web":
             history_summary.append({
@@ -607,7 +616,8 @@ async def get_history():
                 "mode": p.get("mode"),
                 "title": p.get("title", "Not Found"),
                 "url": p.get("url", "Not Found"),
-                "takeaways": p.get("takeaways", "Not Found")
+                "takeaways": p.get("takeaways", "Not Found"),
+                "created_at": p.get("created_at", "Not Found")
             })
         else: # For backward compatibility with old entries without a mode
             history_summary.append({
@@ -618,6 +628,7 @@ async def get_history():
                 "authors": p.get("authors", "Not Found"),
                 "affiliated_institute": p.get("affiliated_institute", "Not Found"),
                 "version": p.get("version", "Not Found"),
+                "created_at": p.get("created_at", "Not Found")
             })
     return history_summary
 
