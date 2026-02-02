@@ -8,6 +8,7 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
+  gap: 10px;
 }
 
 .search-bar {
@@ -41,6 +42,7 @@
   padding: 15px;
   cursor: pointer;
   transition: box-shadow 0.3s ease-in-out;
+  min-width: 0;
 }
 
 .history-card:hover {
@@ -51,6 +53,8 @@
   margin-top: 0;
   font-size: 1.1em;
   color: #61dafb;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .history-card-date {
@@ -68,9 +72,37 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
+  word-break: break-word;
 }
 
 .history-panel h2 {
   color: #61dafb;
+}
+
+
+.history-card[data-mode="scientific_paper"] {
+  border-left: 5px solid #61dafb;
+}
+
+.history-card[data-mode="legal_document"] {
+  border-left: 5px solid #ffb86c;
+}
+
+.history-card[data-mode="web"] {
+  border-left: 5px solid #50fa7b;
+}
+
+.history-card[data-mode="document"] {
+  border-left: 5px solid #ff79c6;
+}
+
+
+.filter-dropdown {
+  width: 25%;
+  padding: 10px;
+  border: 1px solid #61dafb;
+  border-radius: 5px;
+  background-color: #3a3f47;
+  color: white;
 }
 
