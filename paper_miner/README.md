@@ -85,7 +85,7 @@ This is the simplest way to get the entire application running.
 Follow these steps to run the frontend and backend services separately on your local machine.
 
 #### 1. Prerequisites
-- Python 3.9+
+- Python 3.13+
 - Node.js and npm (or yarn)
 - Google Gemini API Key
 
